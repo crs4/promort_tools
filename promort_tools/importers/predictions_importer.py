@@ -52,9 +52,10 @@ class PredictionImporter(object):
         if omero_id:
             payload["omero_id"] = omero_id
         if provenance_json:
-            payload["provenance"] = json.dumps(provenance_json)
+            payload["provenance"] = provenance_json
 
-        response = self.promort_client.post(api_url="api/predictions/", payload=payload)
+        self.logger.info("payload %s", payload)
+        response = self.promort_client.post(api_url="api/predictions/", json=payload)
         if response.status_code == requests.codes.CREATED:
             self.logger.info("Prediction created")
             print(response.text)
@@ -79,6 +80,7 @@ class PredictionImporter(object):
             args.prediction_type,
             args.omero_id,
             args.review_required,
+            args.provenance,
         )  # TODO: add provenance
         self.logger.info("Import job completed")
         self.promort_client.logout()
@@ -97,10 +99,7 @@ def implementation(host, user, passwd, session_id, logger, args):
 # TODO: add provenance
 def make_parser(parser):
     parser.add_argument(
-        "--prediction-label",
-        type=str,
-        required=True,
-        help="prediction label"
+        "--prediction-label", type=str, required=True, help="prediction label"
     )
     parser.add_argument(
         "--slide-label",
@@ -124,6 +123,24 @@ def make_parser(parser):
         "--review-required",
         action="store_true",
         help="require a review for this prediction object",
+    )
+
+    parser.add_argument(
+        "--provenance",
+        type=json.loads,
+        help="""
+            json representing provenance data.
+            Example:
+            {  "name": "tumor",
+              "model": "tumor-model",
+              "params": {
+                "param": 1
+              },
+              "start_date": "2022-03-25T10:19:58.0",
+              "end_date": "2022-03-25T10:20:58.0"
+            }
+        """,
+        required=False,
     )
 
 
